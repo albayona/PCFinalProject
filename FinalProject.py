@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from scipy.integrate import odeint
+import scipy.optimize as opt
 
 # Start and end time (in milliseconds)
 tmin = 0.0
@@ -36,7 +37,6 @@ Tbase = 6.3
 
 Q10 = 3.0
 
-
 # Potassium ion-channel rate functions
 
 
@@ -66,8 +66,8 @@ def beta_h(V):
 
 
 def FV(t, Vm, m, n, h):
-    GK = (gK / Cm) * (n ** 4.0)
-    GNa = (gNa / Cm) * (m ** 3.0) * h
+    GK = (gK / Cm) * (n**4.0)
+    GNa = (gNa / Cm) * (m**3.0) * h
     GL = gL / Cm
 
     INa = (GNa * (Vm - ENa))
@@ -90,7 +90,7 @@ def FH(Vm, h, T):
 
 
 def phi(T):
-  return Q10 ** ((T - Tbase) / 10.0)
+    return Q10**((T - Tbase) / 10.0)
 
 
 def EulerForward(dt, t0, tf, T, V0, m0, n0, h0):
@@ -103,13 +103,10 @@ def EulerForward(dt, t0, tf, T, V0, m0, n0, h0):
     V = np.zeros(N)
 
     # n, m, and h steady-state values
-
     '''Initial m - value'''
     m[0] = m0
-
     '''Initial n - value'''
     n[0] = n0
-
     ''' Initial h - value  '''
     h[0] = h0
 
@@ -119,7 +116,49 @@ def EulerForward(dt, t0, tf, T, V0, m0, n0, h0):
         m[t] = m[t - 1] + dt * FM(V[t - 1], m[t - 1], T)
         n[t] = n[t - 1] + dt * FN(V[t - 1], n[t - 1], T)
         h[t] = h[t - 1] + dt * FH(V[t - 1], h[t - 1], T)
-        V[t] = V[t - 1] + dt * FV(time[t], V[t - 1], m[t - 1], n[t - 1], h[t - 1])
+        V[t] = V[t -
+                 1] + dt * FV(time[t], V[t - 1], m[t - 1], n[t - 1], h[t - 1])
+
+    return time, V
+
+
+def get_EB(X, yv, yn, ym, yh, I, Te, h):
+    return [
+        yv + h * FV(I, X[0], X[1], X[2], X[3]) - X[0],
+        yn + h * FN(X[1], X[0], Te) - X[1],
+        ym + h * FM(X[2], X[0], Te) - X[2],
+        yh + h * FH(X[3], X[0], Te) - X[3],
+    ]
+
+
+def EulerBackward(dt, t0, tf, T, V0, m0, n0, h0):
+    time = np.arange(t0, tf + dt, dt)
+    N = len(time)
+
+    m = np.zeros(N)
+    n = np.zeros(N)
+    h = np.zeros(N)
+    V = np.zeros(N)
+
+    # n, m, and h steady-state values
+    '''Initial m - value'''
+    m[0] = m0
+    '''Initial n - value'''
+    n[0] = n0
+    ''' Initial h - value  '''
+    h[0] = h0
+    ''' Initial V - value  '''
+    V[0] = V0
+
+    for t in range(1, N):
+        back_array = opt.fsolve(
+            get_EB, np.array([V[t - 1], n[t - 1], m[t - 1], h[t - 1]]),
+            (V[t - 1], n[t - 1], m[t - 1], h[t - 1], I(t), T, dt))
+
+        m[t] = back_array[2]
+        n[t] = back_array[1]
+        h[t] = back_array[3]
+        V[t] = back_array[0]
 
     return time, V
 
@@ -134,13 +173,10 @@ def RK2(dt, t0, tf, T, V0, m0, n0, h0):
     V = np.zeros(N)
 
     # n, m, and h steady-state values
-
     '''Initial m - value'''
     m[0] = m0
-
     '''Initial n - value'''
     n[0] = n0
-
     ''' Initial h - value  '''
     h[0] = h0
 
@@ -160,7 +196,8 @@ def RK2(dt, t0, tf, T, V0, m0, n0, h0):
         h[i] = h[i - 1] + (dt / 2.0) * (k1H + k2H)
 
         k1V = FV(time[i], V[i - 1], m[i - 1], n[i - 1], h[i - 1])
-        k2V = FV(time[i], V[i - 1] + dt, m[i - 1] + k1M * dt, n[i - 1] + k1N * dt, h[i - 1] + k1H * dt)
+        k2V = FV(time[i], V[i - 1] + dt, m[i - 1] + k1M * dt,
+                 n[i - 1] + k1N * dt, h[i - 1] + k1H * dt)
         V[i] = V[i - 1] + (dt / 2.0) * (k1V + k2V)
 
     return time, V
@@ -186,14 +223,15 @@ def I(t):
     I = 0.0
 
     if 0.0 <= t <= 60.0:
-        I =  10.0
+        I = 10.0
     elif 70.0 < t < 140.0:
         I = -17.0
 
     return I
 
 
-Time, Voltage = EulerForward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+Time, Voltage = EulerForward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
+                             h_inf())
 
 fig, ax = plt.subplots(figsize=(12, 7))
 ax.plot(Time, Voltage)
@@ -211,6 +249,18 @@ ax.plot(Time, Voltage)
 ax.set_xlabel('Time (ms)')
 ax.set_ylabel('Vm (mV)')
 ax.set_title('Neuron potential (RK2)')
+plt.grid()
+
+plt.show()
+
+Time, Voltage = EulerBackward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
+                              h_inf())
+
+fig, ax = plt.subplots(figsize=(12, 7))
+ax.plot(Time, Voltage)
+ax.set_xlabel('Time (ms)')
+ax.set_ylabel('Vm (mV)')
+ax.set_title('Neuron potential (Euler Backward)')
 plt.grid()
 
 plt.show()
