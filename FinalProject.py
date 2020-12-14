@@ -37,7 +37,6 @@ Tbase = 6.3
 
 Q10 = 3.0
 
-
 # Potassium ion-channel rate functions
 
 
@@ -67,8 +66,8 @@ def beta_h(V):
 
 
 def FV(t, Vm, m, n, h):
-    GK = (gK / Cm) * (n ** 4.0)
-    GNa = (gNa / Cm) * (m ** 3.0) * h
+    GK = (gK / Cm) * (n**4.0)
+    GNa = (gNa / Cm) * (m**3.0) * h
     GL = gL / Cm
 
     INa = (GNa * (Vm - ENa))
@@ -91,7 +90,7 @@ def FH(Vm, h, T):
 
 
 def phi(T):
-    return Q10 ** ((T - Tbase) / 10.0)
+    return Q10**((T - Tbase) / 10.0)
 
 
 def EulerForward(dt, t0, tf, T, V0, m0, n0, h0):
@@ -117,7 +116,8 @@ def EulerForward(dt, t0, tf, T, V0, m0, n0, h0):
         m[t] = m[t - 1] + dt * FM(V[t - 1], m[t - 1], T)
         n[t] = n[t - 1] + dt * FN(V[t - 1], n[t - 1], T)
         h[t] = h[t - 1] + dt * FH(V[t - 1], h[t - 1], T)
-        V[t] = V[t - 1] + dt * FV(time[t], V[t - 1], m[t - 1], n[t - 1], h[t - 1])
+        V[t] = V[t -
+                 1] + dt * FV(time[t], V[t - 1], m[t - 1], n[t - 1], h[t - 1])
 
     return time, V
 
@@ -152,7 +152,7 @@ def EulerBackward(dt, t0, tf, T, V0, m0, n0, h0):
 
     for t in range(1, N):
         back_array = opt.fsolve(
-            get_EB, np.array([V[t-1], m[t-1], n[t-1], h[t-1]]),
+            get_EB, np.array([V[t - 1], m[t - 1], n[t - 1], h[t - 1]]),
             (V[t - 1], m[t - 1], n[t - 1], h[t - 1], T, dt, time[t]))
 
         V[t] = back_array[0]
@@ -201,6 +201,56 @@ def RK2(dt, t0, tf, T, V0, m0, n0, h0):
         k2V = FV(time[i], V[i - 1] + dt, m[i - 1] + k1M * dt,
                  n[i - 1] + k1N * dt, h[i - 1] + k1H * dt)
         V[i] = V[i - 1] + (dt / 2.0) * (k1V + k2V)
+
+    return time, V
+
+
+def RK4(dt, t0, tf, T, V0, m0, n0, h0):
+    time = np.arange(t0, tf + dt, dt)
+    N = len(time)
+
+    m = np.zeros(N)
+    n = np.zeros(N)
+    h = np.zeros(N)
+    V = np.zeros(N)
+
+    # n, m, and h steady-state values
+    '''Initial m - value'''
+    m[0] = m0
+    '''Initial n - value'''
+    n[0] = n0
+    ''' Initial h - value  '''
+    h[0] = h0
+
+    V[0] = V0
+
+    for i in range(1, N):
+        k1M = FM(V[i - 1], m[i - 1], T)
+        k2M = FM(V[i - 1] + 0.5 * dt, m[i - 1] + 0.5 * k1M * dt, T)
+        k3M = FM(V[i - 1] + 0.5 * dt, m[i - 1] + 0.5 * k2M * dt, T)
+        k4M = FM(V[i - 1] + dt, m[i - 1] + k3M * dt, T)
+        m[i] = m[i - 1] + (dt / 6.0) * (k1M + 2.0 * k2M + 2.0 * k3M + k4M)
+
+        k1N = FN(V[i - 1], n[i - 1], T)
+        k2N = FN(V[i - 1] + 0.5 * dt, n[i - 1] + 0.5 * k1N * dt, T)
+        k3N = FN(V[i - 1] + 0.5 * dt, n[i - 1] + 0.5 * k2N * dt, T)
+        k4N = FN(V[i - 1] + dt, n[i - 1] + k3N * dt, T)
+        n[i] = n[i - 1] + (dt / 6.0) * (k1N + 2.0 * k2N + 2.0 * k3N + k4N)
+
+        k1H = FH(V[i - 1], h[i - 1], T)
+        k2H = FH(V[i - 1] + 0.5 * dt, h[i - 1] + 0.5 * k1H * dt, T)
+        k3H = FH(V[i - 1] + 0.5 * dt, h[i - 1] + 0.5 * k2H * dt, T)
+        k4H = FH(V[i - 1] + dt, h[i - 1] + k3H * dt, T)
+        h[i] = h[i - 1] + (dt / 6.0) * (k1H + 2.0 * k2H + 2.0 * k3H + k4H)
+
+        k1V = FV(time[i], V[i - 1], m[i - 1], n[i - 1], h[i - 1])
+        k2V = FV(time[i], V[i - 1] + dt, m[i - 1] + 0.5 * k1M * dt,
+                 n[i - 1] + 0.5 * k1N * dt, h[i - 1] + 0.5 * k1H * dt)
+        k3V = FV(time[i], V[i - 1] + dt, m[i - 1] + 0.5 * k2M * dt,
+                 n[i - 1] + 0.5 * k1N * dt, h[i - 1] + 0.5 * k1H * dt)
+        k4V = FV(time[i], V[i - 1] + dt, m[i - 1] + k2M * dt,
+                 n[i - 1] + k1N * dt, h[i - 1] + k1H * dt)
+        V[i] = V[i - 1] + (dt / 6.0) * (k1V + 2.0 * k2V + 2.0 * k3V + k4V)
 
     return time, V
 
@@ -255,13 +305,25 @@ plt.grid()
 
 plt.show()
 
-Time, Voltage = EulerBackward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+Time, Voltage = EulerBackward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
+                              h_inf())
 
 fig, ax = plt.subplots(figsize=(12, 7))
 ax.plot(Time, Voltage)
 ax.set_xlabel('Time (ms)')
 ax.set_ylabel('Vm (mV)')
 ax.set_title('Neuron potential (Euler Backward)')
+plt.grid()
+
+plt.show()
+
+Time, Voltage = RK4(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+
+fig, ax = plt.subplots(figsize=(12, 7))
+ax.plot(Time, Voltage)
+ax.set_xlabel('Time (ms)')
+ax.set_ylabel('Vm (mV)')
+ax.set_title('Neuron potential (RK4)')
 plt.grid()
 
 plt.show()
