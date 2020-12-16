@@ -372,9 +372,7 @@ sw_lg_white = "#d2dae2"
 sw_white = "#ffffff"
 
 # Variables Iniciales
-dt_tk = 0.01
-t0_tk = tmin
-tf_tk = tmax
+tmax_tk = tmax
 T_tk = 6.0
 V0_tk = 0.0
 m0_tk = m_inf()
@@ -420,42 +418,42 @@ def get_function():
     """
 
     if opt_tg.get() == 1:
-        return get_time_voltage_EF(dt=value_dt.get(),
+        return get_time_voltage_EF(tf=value_tmax.get(),
                                    T=value_t.get(),
                                    V0=value_v.get(),
                                    m0=value_m.get(),
                                    n0=value_n.get(),
                                    h0=value_h.get())
     elif opt_tg.get() == 2:
-        return get_time_voltage_EB(dt=value_dt.get(),
+        return get_time_voltage_EB(tf=value_tmax.get(),
                                    T=value_t.get(),
                                    V0=value_v.get(),
                                    m0=value_m.get(),
                                    n0=value_n.get(),
                                    h0=value_h.get())
     elif opt_tg.get() == 3:
-        return get_time_voltage_EB(dt=value_dt.get(),
+        return get_time_voltage_EB(tf=value_tmax.get(),
                                    T=value_t.get(),
                                    V0=value_v.get(),
                                    m0=value_m.get(),
                                    n0=value_n.get(),
                                    h0=value_h.get())  # TODO - seria euler mod
     elif opt_tg.get() == 4:
-        return get_time_voltage_RK2(dt=value_dt.get(),
+        return get_time_voltage_RK2(tf=value_tmax.get(),
                                     T=value_t.get(),
                                     V0=value_v.get(),
                                     m0=value_m.get(),
                                     n0=value_n.get(),
                                     h0=value_h.get())
     elif opt_tg.get() == 5:
-        return get_time_voltage_RK4(dt=value_dt.get(),
+        return get_time_voltage_RK4(tf=value_tmax.get(),
                                     T=value_t.get(),
                                     V0=value_v.get(),
                                     m0=value_m.get(),
                                     n0=value_n.get(),
                                     h0=value_h.get())
     else:
-        return get_time_voltage_EF(dt=value_dt.get(),
+        return get_time_voltage_EF(tf=value_tmax.get(),
                                    T=value_t.get(),
                                    V0=value_v.get(),
                                    m0=value_m.get(),
@@ -762,9 +760,9 @@ lbl_dt = tk.Label(
 ).place(x=x_if, y=y_if + (pad_yf * 16))
 
 # * INPUT VALUE VARIABLE tiempo de estimulacion
-value_dt = tk.DoubleVar(value=dt_tk)
+value_tmax = tk.DoubleVar(value=tmax_tk)
 ph_dt = ttk.Entry(master=input_frame,
-                  textvariable=value_dt,
+                  textvariable=value_tmax,
                   width=12,
                   justify=tk.RIGHT).place(x=x_if + (pad_xf * 7.0),
                                           y=y_if + (pad_yf * 16))
