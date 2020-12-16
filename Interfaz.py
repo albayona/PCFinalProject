@@ -276,35 +276,66 @@ def h_inf(Vm=0.0):
 
 # Current
 def I(t):
-    I = 40.0
+    # I = 40.0
+    I = value_cf.get()
 
-    if 0.0 <= t <= 60.0:
-        I = 10.0
-    elif 70.0 < t < 140.0:
-        I = -17.0
+    # corriente fija
+    if opt_corriente.get() == 1:
+        return I
+
+    if value_cv_interi_1.get() <= t <= value_cv_interf_1.get():
+        I = value_cv_inter_1_valor.get()
+    elif value_cv_interi_2.get() < t < value_cv_interf_2.get():
+        I = value_cv_inter_1_valor.get()
 
     return I
 
 
-def get_time_voltage_EF():
-    time, voltage = EulerForward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
-                                 h_inf())
+def get_time_voltage_EF(dt=0.01,
+                        t0=tmin,
+                        tf=tmax,
+                        T=6.0,
+                        V0=0.0,
+                        m0=m_inf(),
+                        n0=n_inf(),
+                        h0=h_inf()):
+    time, voltage = EulerForward(dt, t0, tf, T, V0, m0, n0, h0)
     return time, voltage
 
 
-def get_time_voltage_EB():
-    time, voltage = EulerBackward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
-                                  h_inf())
+def get_time_voltage_EB(dt=0.01,
+                        t0=tmin,
+                        tf=tmax,
+                        T=6.0,
+                        V0=0.0,
+                        m0=m_inf(),
+                        n0=n_inf(),
+                        h0=h_inf()):
+    time, voltage = EulerBackward(dt, t0, tf, T, V0, m0, n0, h0)
     return time, voltage
 
 
-def get_time_voltage_RK2():
-    time, voltage = RK2(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+def get_time_voltage_RK2(dt=0.1,
+                         t0=tmin,
+                         tf=tmax,
+                         T=6.0,
+                         V0=0.0,
+                         m0=m_inf(),
+                         n0=n_inf(),
+                         h0=h_inf()):
+    time, voltage = RK2(dt, t0, tf, T, V0, m0, n0, h0)
     return time, voltage
 
 
-def get_time_voltage_RK4():
-    time, voltage = RK4(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+def get_time_voltage_RK4(dt=0.1,
+                         t0=tmin,
+                         tf=tmax,
+                         T=6.0,
+                         V0=0.0,
+                         m0=m_inf(),
+                         n0=n_inf(),
+                         h0=h_inf()):
+    time, voltage = RK4(dt, t0, tf, T, V0, m0, n0, h0)
     return time, voltage
 
 
@@ -340,6 +371,16 @@ sw_lg_green = "#0be881"
 sw_lg_white = "#d2dae2"
 sw_white = "#ffffff"
 
+# Variables Iniciales
+dt_tk = 0.01
+t0_tk = tmin
+tf_tk = tmax
+T_tk = 6.0
+V0_tk = 0.0
+m0_tk = m_inf()
+n0_tk = n_inf()
+h0_tk = h_inf()
+
 # Configuración de la ventana
 window = tk.Tk()
 
@@ -374,29 +415,67 @@ def close_app():
 
 
 def get_function():
+    """
+    Obtiene la funcion por opcion seleccionada
+    """
+
     if opt_tg.get() == 1:
-        return get_time_voltage_EF()
+        return get_time_voltage_EF(dt=value_dt.get(),
+                                   T=value_t.get(),
+                                   V0=value_v.get(),
+                                   m0=value_m.get(),
+                                   n0=value_n.get(),
+                                   h0=value_h.get())
     elif opt_tg.get() == 2:
-        return get_time_voltage_EB()
+        return get_time_voltage_EB(dt=value_dt.get(),
+                                   T=value_t.get(),
+                                   V0=value_v.get(),
+                                   m0=value_m.get(),
+                                   n0=value_n.get(),
+                                   h0=value_h.get())
     elif opt_tg.get() == 3:
-        return get_time_voltage_EB()  # TODO - seria euler mod
+        return get_time_voltage_EB(dt=value_dt.get(),
+                                   T=value_t.get(),
+                                   V0=value_v.get(),
+                                   m0=value_m.get(),
+                                   n0=value_n.get(),
+                                   h0=value_h.get())  # TODO - seria euler mod
     elif opt_tg.get() == 4:
-        return get_time_voltage_RK2()
+        return get_time_voltage_RK2(dt=value_dt.get(),
+                                    T=value_t.get(),
+                                    V0=value_v.get(),
+                                    m0=value_m.get(),
+                                    n0=value_n.get(),
+                                    h0=value_h.get())
     elif opt_tg.get() == 5:
-        return get_time_voltage_RK4()
+        return get_time_voltage_RK4(dt=value_dt.get(),
+                                    T=value_t.get(),
+                                    V0=value_v.get(),
+                                    m0=value_m.get(),
+                                    n0=value_n.get(),
+                                    h0=value_h.get())
     else:
-        return get_time_voltage_EF()  # TODO - seria odeint
+        return get_time_voltage_EF(dt=value_dt.get(),
+                                   T=value_t.get(),
+                                   V0=value_v.get(),
+                                   m0=value_m.get(),
+                                   n0=value_n.get(),
+                                   h0=value_h.get())  # TODO - seria odeint
 
 
 def graficar():
-    fig = plt.Figure(figsize=(8, 4), dpi=100)
-
-    time, voltage = get_function()
-
-    fig.add_subplot(111).plot(time, voltage)
-    fig.suptitle(titulo_grafica[f"{opt_tg.get()}"])
+    """
+    Construye la gráfica
+    """
     plt.close()
+
+    fig = plt.Figure(figsize=(8, 6), dpi=100)
+    time, voltage = get_function()
+    fig.add_subplot(111).plot(time, voltage)
+
+    fig.suptitle(titulo_grafica[f"{opt_tg.get()}"])
     plt.style.use('seaborn-darkgrid')
+
     Plot = FigureCanvasTkAgg(fig, master=window)
     Plot.draw()
     Plot.get_tk_widget().place(x=420, y=20)
@@ -428,7 +507,7 @@ lbl_params = tk.Label(
 ).place(x=x_if, y=y_if)
 
 # selección de tipo de gráfica
-opt_tg = tk.IntVar()
+opt_tg = tk.IntVar(value=1)
 eulerFor_tk = tk.Radiobutton(master=input_frame,
                              text="Euler Forward",
                              value=1,
@@ -462,7 +541,8 @@ rk2_tk = tk.Radiobutton(master=input_frame,
                         bg=sw_night,
                         fg=sw_white,
                         font=('Arial', 18),
-                        command=graficar).place(x=x_if, y=y_if + (pad_yf * 4))
+                        command=graficar).place(x=x_if + (pad_xf * 5.0),
+                                                y=y_if + (pad_yf * 1))
 rk4_tk = tk.Radiobutton(master=input_frame,
                         text="Runge Kutta 4",
                         value=5,
@@ -470,7 +550,8 @@ rk4_tk = tk.Radiobutton(master=input_frame,
                         bg=sw_night,
                         fg=sw_white,
                         font=('Arial', 18),
-                        command=graficar).place(x=x_if, y=y_if + (pad_yf * 5))
+                        command=graficar).place(x=x_if + (pad_xf * 5.0),
+                                                y=y_if + (pad_yf * 2))
 odeint_tk = tk.Radiobutton(master=input_frame,
                            text="Odeint",
                            value=6,
@@ -478,8 +559,8 @@ odeint_tk = tk.Radiobutton(master=input_frame,
                            bg=sw_night,
                            fg=sw_white,
                            font=('Arial', 18),
-                           command=graficar).place(x=x_if,
-                                                   y=y_if + (pad_yf * 6))
+                           command=graficar).place(x=x_if + (pad_xf * 5.0),
+                                                   y=y_if + (pad_yf * 3))
 
 # titulo corriente
 lbl_params = tk.Label(
@@ -488,9 +569,9 @@ lbl_params = tk.Label(
     bg=sw_night,
     text="Corriente",
     font=('Arial', 18),
-).place(x=x_if, y=y_if + (pad_yf * 8))
+).place(x=x_if, y=y_if + (pad_yf * 5))
 
-opt_corriente = tk.IntVar()
+opt_corriente = tk.IntVar(value=2)
 corriente_fija_tk = tk.Radiobutton(master=input_frame,
                                    text="Corriente Fija",
                                    value=1,
@@ -498,18 +579,90 @@ corriente_fija_tk = tk.Radiobutton(master=input_frame,
                                    bg=sw_night,
                                    fg=sw_white,
                                    font=('Arial', 18),
-                                   command=None).place(x=x_if,
-                                                       y=y_if + (pad_yf * 9))
+                                   command=graficar).place(x=x_if,
+                                                           y=y_if +
+                                                           (pad_yf * 6))
+
+# * INPUT VALUE VARIABLE corriente fija
+value_cf = tk.DoubleVar(value=40.0)
+ph_cf = ttk.Entry(master=input_frame,
+                  textvariable=value_cf,
+                  width=6,
+                  justify=tk.RIGHT).place(x=x_if + (pad_xf * 5),
+                                          y=y_if + (pad_yf * 6))
+
 corriente_variable_tk = tk.Radiobutton(master=input_frame,
                                        text="Corriente Variable",
-                                       value=1,
+                                       value=2,
                                        variable=opt_corriente,
                                        bg=sw_night,
                                        fg=sw_white,
                                        font=('Arial', 18),
-                                       command=None).place(x=x_if,
-                                                           y=y_if +
-                                                           (pad_yf * 10))
+                                       command=graficar).place(x=x_if,
+                                                               y=y_if +
+                                                               (pad_yf * 7))
+
+# titulo corriente
+lbl_params = tk.Label(
+    master=input_frame,
+    fg=sw_lg_white,
+    bg=sw_night,
+    text="Intervalo",
+    font=('Arial', 18),
+).place(x=x_if, y=y_if + (pad_yf * 8))
+lbl_params = tk.Label(
+    master=input_frame,
+    fg=sw_lg_white,
+    bg=sw_night,
+    text="Intensidad",
+    font=('Arial', 18),
+).place(x=x_if + (pad_xf * 5), y=y_if + (pad_yf * 8))
+
+# * INPUT VALUE VARIABLE primer intervalo inicial
+value_cv_interi_1 = tk.DoubleVar(value=0.0)
+ph_cvi1 = ttk.Entry(master=input_frame,
+                    textvariable=value_cv_interi_1,
+                    width=6,
+                    justify=tk.RIGHT).place(x=x_if, y=y_if + (pad_yf * 9))
+
+# * INPUT VALUE VARIABLE primer intervalo final
+value_cv_interf_1 = tk.DoubleVar(value=60.0)
+ph_cvf1 = ttk.Entry(master=input_frame,
+                    textvariable=value_cv_interf_1,
+                    width=6,
+                    justify=tk.RIGHT).place(x=x_if + (pad_xf * 2),
+                                            y=y_if + (pad_yf * 9))
+
+# * INPUT VALUE VARIABLE primer intervalo intensidad
+value_cv_inter_1_valor = tk.DoubleVar(value=10.0)
+ph_cvf1 = ttk.Entry(master=input_frame,
+                    textvariable=value_cv_inter_1_valor,
+                    width=6,
+                    justify=tk.RIGHT).place(x=x_if + (pad_xf * 5),
+                                            y=y_if + (pad_yf * 9))
+
+# * INPUT VALUE VARIABLE segundo intervalo inicial
+value_cv_interi_2 = tk.DoubleVar(value=70.0)
+ph_cvi1 = ttk.Entry(master=input_frame,
+                    textvariable=value_cv_interi_2,
+                    width=6,
+                    justify=tk.RIGHT).place(x=x_if, y=y_if + (pad_yf * 10))
+
+# * INPUT VALUE VARIABLE segundo intervalo final
+value_cv_interf_2 = tk.DoubleVar(value=140.0)
+ph_cvf1 = ttk.Entry(master=input_frame,
+                    textvariable=value_cv_interf_2,
+                    width=6,
+                    justify=tk.RIGHT).place(x=x_if + (pad_xf * 2),
+                                            y=y_if + (pad_yf * 10))
+
+# * INPUT VALUE VARIABLE segundo intervalo intensidad
+value_cv_inter_2_valor = tk.DoubleVar(value=-17.0)
+ph_cvf1 = ttk.Entry(master=input_frame,
+                    textvariable=value_cv_inter_2_valor,
+                    width=6,
+                    justify=tk.RIGHT).place(x=x_if + (pad_xf * 5),
+                                            y=y_if + (pad_yf * 10))
 
 # titulo parámetros
 lbl_params = tk.Label(
@@ -520,8 +673,105 @@ lbl_params = tk.Label(
     font=('Arial', 18),
 ).place(x=x_if, y=y_if + (pad_yf * 12))
 
+lbl_vm0 = tk.Label(
+    master=input_frame,
+    fg=sw_white,
+    bg=sw_night,
+    text="Vm0: ",
+    font=('Arial', 18),
+).place(x=x_if, y=y_if + (pad_yf * 13))
+
+# * INPUT VALUE VARIABLE VM0
+value_v = tk.StringVar(value=V0_tk)
+ph_vm0 = ttk.Entry(master=input_frame,
+                   textvariable=value_v,
+                   width=12,
+                   justify=tk.RIGHT).place(x=x_if + (pad_xf * 1.5),
+                                           y=y_if + (pad_yf * 13))
+
+lbl_n = tk.Label(
+    master=input_frame,
+    fg=sw_white,
+    bg=sw_night,
+    text="n: ",
+    font=('Arial', 18),
+).place(x=x_if + (pad_xf * 6), y=y_if + (pad_yf * 13))
+
+# * INPUT VALUE VARIABLE n
+value_n = tk.DoubleVar(value=n0_tk)
+ph_n = ttk.Entry(master=input_frame,
+                 textvariable=value_n,
+                 width=12,
+                 justify=tk.RIGHT).place(x=x_if + (pad_xf * 7.0),
+                                         y=y_if + (pad_yf * 13))
+
+lbl_m = tk.Label(
+    master=input_frame,
+    fg=sw_white,
+    bg=sw_night,
+    text="m: ",
+    font=('Arial', 18),
+).place(x=x_if, y=y_if + (pad_yf * 14))
+
+# * INPUT VALUE VARIABLE m
+value_m = tk.DoubleVar(value=m0_tk)
+ph_m = ttk.Entry(master=input_frame,
+                 textvariable=value_m,
+                 width=12,
+                 justify=tk.RIGHT).place(x=x_if + (pad_xf * 1.5),
+                                         y=y_if + (pad_yf * 14))
+
+lbl_h = tk.Label(
+    master=input_frame,
+    fg=sw_white,
+    bg=sw_night,
+    text="h: ",
+    font=('Arial', 18),
+).place(x=x_if + (pad_xf * 6), y=y_if + (pad_yf * 14))
+
+# * INPUT VALUE VARIABLE h
+value_h = tk.DoubleVar(value=h0_tk)
+ph_h = ttk.Entry(master=input_frame,
+                 textvariable=value_h,
+                 width=12,
+                 justify=tk.RIGHT).place(x=x_if + (pad_xf * 7.0),
+                                         y=y_if + (pad_yf * 14))
+
+lbl_te = tk.Label(
+    master=input_frame,
+    fg=sw_white,
+    bg=sw_night,
+    text="Temperatura: ",
+    font=('Arial', 18),
+).place(x=x_if, y=y_if + (pad_yf * 15))
+
+# * INPUT VALUE VARIABLE temperatura te
+value_t = tk.DoubleVar(value=T_tk)
+ph_t = ttk.Entry(master=input_frame,
+                 textvariable=value_t,
+                 width=12,
+                 justify=tk.RIGHT).place(x=x_if + (pad_xf * 7.0),
+                                         y=y_if + (pad_yf * 15))
+
+lbl_dt = tk.Label(
+    master=input_frame,
+    fg=sw_white,
+    bg=sw_night,
+    text="Tiempo de estimulación: ",
+    font=('Arial', 18),
+).place(x=x_if, y=y_if + (pad_yf * 16))
+
+# * INPUT VALUE VARIABLE tiempo de estimulacion
+value_dt = tk.DoubleVar(value=dt_tk)
+ph_dt = ttk.Entry(master=input_frame,
+                  textvariable=value_dt,
+                  width=12,
+                  justify=tk.RIGHT).place(x=x_if + (pad_xf * 7.0),
+                                          y=y_if + (pad_yf * 16))
+
 ###############
 ## Window main loop
 ###############
 
+graficar()
 window.mainloop()
