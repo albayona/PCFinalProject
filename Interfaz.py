@@ -286,7 +286,7 @@ def I(t):
     if value_cv_interi_1.get() <= t <= value_cv_interf_1.get():
         I = value_cv_inter_1_valor.get()
     elif value_cv_interi_2.get() < t < value_cv_interf_2.get():
-        I = value_cv_inter_1_valor.get()
+        I = value_cv_inter_2_valor.get()
 
     return I
 
@@ -299,7 +299,7 @@ def get_time_voltage_EF(dt=0.01,
                         m0=m_inf(),
                         n0=n_inf(),
                         h0=h_inf()):
-    time, voltage = EulerForward(dt, t0, tf, T, V0, m0, n0, h0)
+    time, voltage = EulerForward(float(dt), float(t0), float(tf), float(T), float(V0), float(m0), float(n0), float(h0))
     return time, voltage
 
 
@@ -311,11 +311,11 @@ def get_time_voltage_EB(dt=0.01,
                         m0=m_inf(),
                         n0=n_inf(),
                         h0=h_inf()):
-    time, voltage = EulerBackward(dt, t0, tf, T, V0, m0, n0, h0)
+    time, voltage = EulerBackward(float(dt), float(t0), float(tf), float(T), float(V0), float(m0), float(n0), float(h0))
     return time, voltage
 
 
-def get_time_voltage_RK2(dt=0.1,
+def get_time_voltage_RK2(dt=0.01,
                          t0=tmin,
                          tf=tmax,
                          T=6.0,
@@ -323,11 +323,11 @@ def get_time_voltage_RK2(dt=0.1,
                          m0=m_inf(),
                          n0=n_inf(),
                          h0=h_inf()):
-    time, voltage = RK2(dt, t0, tf, T, V0, m0, n0, h0)
+    time, voltage = RK2(float(dt), float(t0), float(tf), float(T), float(V0), float(m0), float(n0), float(h0))
     return time, voltage
 
 
-def get_time_voltage_RK4(dt=0.1,
+def get_time_voltage_RK4(dt=0.01,
                          t0=tmin,
                          tf=tmax,
                          T=6.0,
@@ -335,7 +335,7 @@ def get_time_voltage_RK4(dt=0.1,
                          m0=m_inf(),
                          n0=n_inf(),
                          h0=h_inf()):
-    time, voltage = RK4(dt, t0, tf, T, V0, m0, n0, h0)
+    time, voltage = RK4(float(dt), float(t0), float(tf), float(T), float(V0), float(m0), float(n0), float(h0))
     return time, voltage
 
 

@@ -315,7 +315,7 @@ def h_inf(Vm=0.0):
 
 # Current
 def I(t):
-    I = 40.0
+    I = 2.0
 
     if 0.0 <= t <= 60.0:
         I = 10.0
@@ -373,13 +373,13 @@ plt.grid()
 
 plt.show()
 
-# Time, Voltage = RK4(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
-#
-# fig, ax = plt.subplots(figsize=(12, 7))
-# ax.plot(Time, Voltage)
-# ax.set_xlabel('Time (ms)')
-# ax.set_ylabel('Vm (mV)')
-# ax.set_title('Neuron potential (RK4)')
-# plt.grid()
-#
-# plt.show()
+Time, Voltage = RK4(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+
+fig, ax = plt.subplots(figsize=(12, 7))
+ax.plot(Time, Voltage)
+ax.set_xlabel('Time (ms)')
+ax.set_ylabel('Vm (mV)')
+ax.set_title('Neuron potential (RK4)')
+plt.grid()
+
+plt.show()
