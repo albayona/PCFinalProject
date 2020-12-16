@@ -130,6 +130,49 @@ def get_EB(X, yv, ym, yn, yh, Te, dt, t):
         yh - X[3] + dt * FH(X[0], X[3], Te),
     ]
 
+def get_ME(X, yv, ym, yn, yh, Te, dt, t):
+    return [
+        yv - X[0] + (dt / 2.0) * (FV(t, X[0], X[1], X[2], X[3]) + FV(t, yv, ym, yn, yh)),
+        ym - X[1] + (dt / 2.0) * (FM(X[0], X[1], Te) + FM(yv, ym, Te)),
+        yn - X[2] + (dt / 2.0) * (FN(X[0], X[2], Te) + FN(yv, yn, Te)),
+        yh - X[3] + (dt / 2.0) * (FH(X[0], X[3], Te) + FH(yv, yh, Te)),
+    ]
+
+
+
+def ModifiedEuler(dt, t0, tf, T, V0, m0, n0, h0):
+    time = np.arange(t0, tf + dt, dt)
+    N = len(time)
+
+    m = np.zeros(N)
+    n = np.zeros(N)
+    h = np.zeros(N)
+    V = np.zeros(N)
+
+    # n, m, and h steady-state values
+    '''Initial m - value'''
+    m[0] = m0
+    '''Initial n - value'''
+    n[0] = n0
+    ''' Initial h - value  '''
+    h[0] = h0
+    ''' Initial V - value  '''
+    V[0] = V0
+
+    for t in range(1, N):
+        back_array = opt.fsolve(
+            get_ME, np.array([V[t - 1], m[t - 1], n[t - 1], h[t - 1]]),
+            (V[t - 1], m[t - 1], n[t - 1], h[t - 1], T, dt, time[t]))
+
+        V[t] = back_array[0]
+        m[t] = back_array[1]
+        n[t] = back_array[2]
+        h[t] = back_array[3]
+
+        print(V[t])
+
+    return time, V
+
 
 def EulerBackward(dt, t0, tf, T, V0, m0, n0, h0):
     time = np.arange(t0, tf + dt, dt)
@@ -282,28 +325,28 @@ def I(t):
     return I
 
 
-Time, Voltage = EulerForward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
-                             h_inf())
-
-fig, ax = plt.subplots(figsize=(12, 7))
-ax.plot(Time, Voltage)
-ax.set_xlabel('Time (ms)')
-ax.set_ylabel('Vm (mV)')
-ax.set_title('Neuron potential(Euler Forward)')
-plt.grid()
-
-plt.show()
-
-Time, Voltage = RK2(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
-
-fig, ax = plt.subplots(figsize=(12, 7))
-ax.plot(Time, Voltage)
-ax.set_xlabel('Time (ms)')
-ax.set_ylabel('Vm (mV)')
-ax.set_title('Neuron potential (RK2)')
-plt.grid()
-
-plt.show()
+# Time, Voltage = EulerForward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
+#                              h_inf())
+#
+# fig, ax = plt.subplots(figsize=(12, 7))
+# ax.plot(Time, Voltage)
+# ax.set_xlabel('Time (ms)')
+# ax.set_ylabel('Vm (mV)')
+# ax.set_title('Neuron potential(Euler Forward)')
+# plt.grid()
+#
+# plt.show()
+#
+# Time, Voltage = RK2(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+#
+# fig, ax = plt.subplots(figsize=(12, 7))
+# ax.plot(Time, Voltage)
+# ax.set_xlabel('Time (ms)')
+# ax.set_ylabel('Vm (mV)')
+# ax.set_title('Neuron potential (RK2)')
+# plt.grid()
+#
+# plt.show()
 
 Time, Voltage = EulerBackward(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
                               h_inf())
@@ -317,13 +360,26 @@ plt.grid()
 
 plt.show()
 
-Time, Voltage = RK4(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+
+Time, Voltage = ModifiedEuler(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(),
+                              h_inf())
 
 fig, ax = plt.subplots(figsize=(12, 7))
 ax.plot(Time, Voltage)
 ax.set_xlabel('Time (ms)')
 ax.set_ylabel('Vm (mV)')
-ax.set_title('Neuron potential (RK4)')
+ax.set_title('Neuron potential (Modified Euler)')
 plt.grid()
 
 plt.show()
+
+# Time, Voltage = RK4(0.01, tmin, tmax, 6.0, 0.0, m_inf(), n_inf(), h_inf())
+#
+# fig, ax = plt.subplots(figsize=(12, 7))
+# ax.plot(Time, Voltage)
+# ax.set_xlabel('Time (ms)')
+# ax.set_ylabel('Vm (mV)')
+# ax.set_title('Neuron potential (RK4)')
+# plt.grid()
+#
+# plt.show()
