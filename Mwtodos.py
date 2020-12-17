@@ -116,8 +116,7 @@ def EulerForward(dt, t0, tf, T, V0, m0, n0, h0):
         m[t] = m[t - 1] + dt * FM(V[t - 1], m[t - 1], T)
         n[t] = n[t - 1] + dt * FN(V[t - 1], n[t - 1], T)
         h[t] = h[t - 1] + dt * FH(V[t - 1], h[t - 1], T)
-        V[t] = V[t -
-                 1] + dt * FV(time[t], V[t - 1], m[t - 1], n[t - 1], h[t - 1])
+        V[t] = V[t - 1] + dt * FV(time[t], V[t - 1], m[t - 1], n[t - 1], h[t - 1])
 
     return time, V
 

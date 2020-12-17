@@ -43,6 +43,7 @@ Tbase = 6.3
 
 Q10 = 3.0
 
+
 # Potassium ion-channel rate functions
 
 
@@ -72,8 +73,8 @@ def beta_h(V):
 
 
 def FV(t, Vm, m, n, h):
-    GK = (gK / Cm) * (n**4.0)
-    GNa = (gNa / Cm) * (m**3.0) * h
+    GK = (gK / Cm) * (n ** 4.0)
+    GNa = (gNa / Cm) * (m ** 3.0) * h
     GL = gL / Cm
 
     INa = (GNa * (Vm - ENa))
@@ -96,7 +97,7 @@ def FH(Vm, h, T):
 
 
 def phi(T):
-    return Q10**((T - Tbase) / 10.0)
+    return Q10 ** ((T - Tbase) / 10.0)
 
 
 def EulerForward(dt, t0, tf, T, V0, m0, n0, h0):
@@ -315,6 +316,18 @@ def get_time_voltage_EB(dt=0.01,
     return time, voltage
 
 
+def get_time_voltage_EM(dt=0.01,
+                        t0=tmin,
+                        tf=tmax,
+                        T=6.0,
+                        V0=0.0,
+                        m0=m_inf(),
+                        n0=n_inf(),
+                        h0=h_inf()):
+    time, voltage = ModifiedEuler(float(dt), float(t0), float(tf), float(T), float(V0), float(m0), float(n0), float(h0))
+    return time, voltage
+
+
 def get_time_voltage_RK2(dt=0.01,
                          t0=tmin,
                          tf=tmax,
@@ -339,6 +352,49 @@ def get_time_voltage_RK4(dt=0.01,
     return time, voltage
 
 
+def get_ME(X, yv, ym, yn, yh, Te, dt, t):
+    return [
+        yv - X[0] + (dt / 2.0) * (FV(t, X[0], X[1], X[2], X[3]) + FV(t, yv, ym, yn, yh)),
+        ym - X[1] + (dt / 2.0) * (FM(X[0], X[1], Te) + FM(yv, ym, Te)),
+        yn - X[2] + (dt / 2.0) * (FN(X[0], X[2], Te) + FN(yv, yn, Te)),
+        yh - X[3] + (dt / 2.0) * (FH(X[0], X[3], Te) + FH(yv, yh, Te)),
+    ]
+
+
+def ModifiedEuler(dt, t0, tf, T, V0, m0, n0, h0):
+    time = np.arange(t0, tf + dt, dt)
+    N = len(time)
+
+    m = np.zeros(N)
+    n = np.zeros(N)
+    h = np.zeros(N)
+    V = np.zeros(N)
+
+    # n, m, and h steady-state values
+    '''Initial m - value'''
+    m[0] = m0
+    '''Initial n - value'''
+    n[0] = n0
+    ''' Initial h - value  '''
+    h[0] = h0
+    ''' Initial V - value  '''
+    V[0] = V0
+
+    for t in range(1, N):
+        back_array = opt.fsolve(
+            get_ME, np.array([V[t - 1], m[t - 1], n[t - 1], h[t - 1]]),
+            (V[t - 1], m[t - 1], n[t - 1], h[t - 1], T, dt, time[t]))
+
+        V[t] = back_array[0]
+        m[t] = back_array[1]
+        n[t] = back_array[2]
+        h[t] = back_array[3]
+
+        # print(V[t])
+
+    return time, V
+
+
 #####################################
 """
 Interfaz Gráfica
@@ -358,6 +414,7 @@ from matplotlib.backend_bases import key_press_handler
 
 import matplotlib.animation as animation
 import matplotlib
+
 matplotlib.use("TkAgg")
 
 ###############
@@ -381,6 +438,8 @@ h0_tk = h_inf()
 
 # Configuración de la ventana
 window = tk.Tk()
+global windTk
+windTk = window
 
 appTitle = "Modelo Matemático Hodgkin & Huxley"
 window.geometry('1200x700')
@@ -432,7 +491,7 @@ def get_function():
                                    n0=value_n.get(),
                                    h0=value_h.get())
     elif opt_tg.get() == 3:
-        return get_time_voltage_EB(tf=value_tmax.get(),
+        return get_time_voltage_EM(tf=value_tmax.get(),
                                    T=value_t.get(),
                                    V0=value_v.get(),
                                    m0=value_m.get(),
@@ -470,8 +529,31 @@ def graficar():
     fig = plt.Figure(figsize=(8, 6), dpi=100)
     time, voltage = get_function()
     fig.add_subplot(111).plot(time, voltage)
+    fig.add_axes()
+    global xAxe
+    global yAxe
 
+    xAxe = time
+    yAxe = voltage
     fig.suptitle(titulo_grafica[f"{opt_tg.get()}"])
+    plt.style.use('seaborn-darkgrid')
+
+    Plot = FigureCanvasTkAgg(fig, master=window)
+    Plot.draw()
+    Plot.get_tk_widget().place(x=420, y=20)
+
+
+def graficarDatosCargados(time, voltage):
+    """
+    Construye la gráfica
+    """
+    plt.close()
+
+    fig = plt.Figure(figsize=(8, 6), dpi=100)
+    fig.add_subplot(111).plot(time, voltage)
+    fig.add_axes()
+
+    fig.suptitle("Grafica cargada por el usuario")
     plt.style.use('seaborn-darkgrid')
 
     Plot = FigureCanvasTkAgg(fig, master=window)
@@ -482,9 +564,71 @@ def graficar():
 ###############
 ## Buttons
 ###############
+import struct as st
+import os
+import tkinter as tk
+from tkinter import filedialog
 
 close_btn = ttk.Button(window, text='Salir', command=close_app).place(x=1100,
                                                                       y=660)
+
+
+def cargar():
+    file_pathX = filedialog.askopenfilename(defaultextension='.bin', title="Selecione el archivo .bin para el eje X")
+    file_pathY = filedialog.askopenfilename(defaultextension='.bin', title="Selecione el archivo .bin para el eje Y")
+    # datos de puntos x
+    try:
+        file = open(file_pathX, "rb")  # abre el archivo
+        paquete = file.read()
+        file.close()
+        # lo descomprime usando d que significa double y los 8 bytes que ocupa
+        numsX = st.unpack("d" * int(len(paquete) / 8), paquete)  # lo descomprime
+
+        # datos de puntos y
+        file = open(file_pathY, "rb")  # abre el archivo
+        paquete = file.read()
+        file.close()
+        # lo descomprime usando d que significa double y los 8 bytes que ocupa
+        numsY = st.unpack("d" * int(len(paquete) / 8), paquete)  # lo descomprime
+
+        print("valores Y", numsY)
+        print("valores X", numsX)
+        graficarDatosCargados(numsX, numsY)
+
+    except Exception as e:
+        raise
+
+
+load_btn = ttk.Button(window, text='Cargar datos', command=cargar).place(x=1000, y=660)
+
+
+def exportar():
+    numsX = xAxe
+    numsY = yAxe
+
+    paquete = st.pack("d" * len(numsX), *numsX)  # se comprimen en el archivo con formato binario
+    paqueteY = st.pack("d" * len(numsY), *numsY)  # se comprimen en el archivo con formato binario
+
+    if os.path.exists("xValues.bin"):  # si el archivo ya existe lo elimina
+        os.remove("xValues.bin")
+
+    file = open("xValues.bin", "wb")  # crea el nuevo archivo y escribe los numeros en formato binario
+    file.write(paquete)
+    file.close()
+
+    if os.path.exists("yValues.bin"):  # si el archivo ya existe lo elimina
+        os.remove("yValues.bin")
+
+    file = open("yValues.bin", "wb")  # crea el nuevo archivo y escribe los numeros en formato binario
+    file.write(paqueteY)
+    file.close()
+
+    print("El archivo xValues quedó exportado en ", os.path.abspath("xValues.bin"))
+    print("El archivo yValues quedó exportado en ", os.path.abspath("yValues.bin"))
+
+
+load_btn = ttk.Button(window, text='Exportar datos', command=exportar).place(x=900,
+                                                                             y=660)
 
 ###############
 ## Labels
@@ -579,7 +723,7 @@ corriente_fija_tk = tk.Radiobutton(master=input_frame,
                                    font=('Arial', 18),
                                    command=graficar).place(x=x_if,
                                                            y=y_if +
-                                                           (pad_yf * 6))
+                                                             (pad_yf * 6))
 
 # * INPUT VALUE VARIABLE corriente fija
 value_cf = tk.DoubleVar(value=40.0)
@@ -598,7 +742,7 @@ corriente_variable_tk = tk.Radiobutton(master=input_frame,
                                        font=('Arial', 18),
                                        command=graficar).place(x=x_if,
                                                                y=y_if +
-                                                               (pad_yf * 7))
+                                                                 (pad_yf * 7))
 
 # titulo corriente
 lbl_params = tk.Label(
